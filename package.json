@@ -1,6 +1,6 @@
 {
   "name": "hubot-holidaycalendar",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Office holiday iCal integration - ask hubot who is on vacation today",
   "main": "index.coffee",
   "scripts": {
@@ -10,15 +10,24 @@
     "type": "git",
     "url": "https://github.com/potchin/hubot-holidaycalendar.git"
   },
-  "dependencies":{
-    "ical":"",
-    "request":""
+  "dependencies": {
+    "ical": "",
+    "request": ""
   },
   "keywords": [
     "ical",
     "calendar"
   ],
-  "contributors":[{"name":"potchin","email":""},{"name":"dj21d","email":""}],
+  "contributors": [
+    {
+      "name": "potchin",
+      "email": ""
+    },
+    {
+      "name": "dj21d",
+      "email": ""
+    }
+  ],
   "author": "Leon van Kammen / potchin",
   "license": "BSD",
   "bugs": {
