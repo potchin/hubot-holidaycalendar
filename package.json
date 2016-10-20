@@ -1,14 +1,14 @@
 {
-  "name": "hubot-script-ical",
+  "name": "hubot-holidaycalendar",
   "version": "1.0.0",
-  "description": "google calendar integration, allows hubot to notify roommembers when ical events (are about) to happen",
+  "description": "Office holiday iCal integration - ask hubot who is on vacation today",
   "main": "index.coffee",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/coderofsalvation/hubot-script-ical.git"
+    "url": "https://github.com/potchin/hubot-holidaycalendar.git"
   },
   "dependencies":{
     "ical":"",
@@ -18,11 +18,11 @@
     "ical",
     "calendar"
   ],
-  "contributors":[{"name":"dj21d","email":""}],
-  "author": "Leon van Kammen / coderofsalvation",
+  "contributors":[{"name":"potchin","email":""}{"name":"dj21d","email":""}],
+  "author": "Leon van Kammen / potchin",
   "license": "BSD",
   "bugs": {
-    "url": "https://github.com/coderofsalvation/hubot-script-ical/issues"
+    "url": "https://github.com/potchin/hubot-holidaycalendar/issues"
   },
-  "homepage": "https://github.com/coderofsalvation/hubot-script-ical"
+  "homepage": "https://github.com/potchin/hubot-holidaycalendar"
 }
