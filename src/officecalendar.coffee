@@ -73,7 +73,9 @@ module.exports = (robot) ->
                 eventstartdate = new Date(event.start)
                 eventenddate = new Date(event.end)
 
-                if (eventstartdate < whentolook and eventenddate > whentolookend) or (eventstartdate > whentolook and eventenddate < whentolookend)
+                if (eventstartdate < whentolook and eventenddate > whentolookend) \
+                or (eventstartdate > whentolook and eventstartdate < whentolookend) \
+                or (eventenddate > whentolook and eventenddate < whentolookend)
                   verbiage.push "\t\t#{event.summary} from #{new Date(event.start).toDateString()}, returning on #{new Date(event.end).toDateString()}"
 
       if verbiage.length > 0

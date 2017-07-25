@@ -1,7 +1,7 @@
 {
   "name": "hubot-holidaycalendar",
-  "version": "1.0.2",
-  "description": "Office holiday iCal integration - ask hubot who is on vacation today",
+  "version": "1.1.1",
+  "description": "Office holiday iCal integration - ask hubot who is on vacation",
   "main": "index.coffee",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
