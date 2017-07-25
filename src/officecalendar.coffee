@@ -1,109 +1,95 @@
 # Description:
-#   Bot which can load your office holiday/vacation days from an iCal calendar URL. Easily find out who is on vacation today
+#   Bot which can load your office holiday/vacation days from an iCal calendar URL. 
+#   Easily find out who is on vacation. Accepts human-readable relative days (like tomorrow, next monday etc)
 #
 # Configuration:
-#   HUBOT_HOLIDAYCALENDAR_POLLING_TIME - how often to refresh calendar info (mins)
 #   HUBOT_HOLIDAYCALENDAR_ICAL_URL - url of ical file containing your holidays
 #
 # Commands:
-#   hubot "holiday|off today|vacation" - List people who are off today
+#   hubot "holidays|off work|vacation" - List people who are off today
+#   hubot "holidays tomorrow" - List people who are off tomorrow
+#   hubot "holidays friday" - List people who are off friday this week
+#   hubot "holidays next friday" - List people who are friday next week
+#   hubot "holidays next week" - List people who are off tomorrow
 #
 # Author:
 #   Jeff Sault (jeff.sault@smartpipesolutions.com)
 #
-ical = require 'ical'
-request = require 'request'
-
-
-class HolidayCalendar
-  constructor: (@robot) ->
-    self = this
-
-    # Set a room info from an URL and ICS data
-    @setRoomFromIcs = (url, data) ->
-      ics = ical.parseICS(data)
-      events = []
-      for cal of ics
-        for _, event of ics[cal]
-          if event.type == 'VEVENT'
-            starts = new Date(event.start).getTime()
-            ends = new Date(event.end).getTime()
-            events.push {
-              title: event.summary, starts: starts, ends: ends
-            }
-
-      self.calendars[0] = { url: url, events: events }
-
-    @refreshCalendar = ->
-      calendar_list = self.get()
-      for cal, item of calendar_list
-        robot.logger.debug("Refreshing calendar: #{cal}")
-        request({uri: item.url}, (err, resp, data) ->
-          if !err && resp.statusCode == 200
-            self.setRoomFromIcs(item.url, data)
-        )
-
-    # Map room_name -> { url, events }
-    @calendars = {}
-
-    @options = {
-      # pooling time between refreshes (milliseconds)
-      calchanges_pooling_time: process.env.HUBOT_HOLIDAYCALENDAR_POLLING_TIME or 60 * 1000 * 60
-    }
-
-    # load previously loaded calendars from brain (removes current calendars :p)
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data.calendars
-        @calendars = @robot.brain.data.calendars
-      else
-        @robot.brain.data.calendars = @calendars
-
-    # checks for changes for each assigned calendar
-    setInterval(@refreshCalendar, @options.calchanges_pooling_time)
-
-  # Sets new iCalendar URL for some room and notifies new events in the room
-  set: (url) ->
-    cals = @calendars
-    self = this
-    request({uri:url}, (err, resp, data) ->
-      if err
-        throw err;
-      if resp.statusCode != 200
-        throw "Error retrieving url with code #{resp.statusCode}"
-      self.setRoomFromIcs(url, data)
-    )
-
-  clear: (room) ->
-    delete @calendars[room]
-
-  get: ->
-    res = []
-    for room, room_info of @calendars
-      res.push { room: room, url: room_info.url, events: room_info.events }
-    return res
-
 module.exports = (robot) ->
-  calendar = new HolidayCalendar robot
-  try
-    calendar.set(process.env.HUBOT_HOLIDAYCALENDAR_ICAL_URL)
-  catch error
-    robot.logger.error("Error retrieving iCalendar: #{error}")
-    return
+  robot.respond /(?:holidays|off work|vacation)(.*)/i, (msg) ->
+    fuzzywhentolook = "today"
+    whentolook = new Date()
+    if msg.match[1]
+      fuzzywhentolook = msg.match[1].trim()
+      daysofweek = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]
+      #this function takes a day of week and optional number of weeks
+      #it returns a date object for the result. defaults to next week
+      Date::getNextWeekDay = (d, w=1) ->
+        if d
+          next = this
+          next.setDate @getDate() - @getDay() + (w*7) + d
+          return next
+        return
 
-  robot.respond /.*(?:holiday|off today|vacation).*/i, (msg) ->
-    calendar_list = calendar.get()
-    if calendar_list.length == 0
-      msg.send "No calendars set"
-      return
-    verbiage = []
-    for cal, item of calendar_list
-      for ev in item.events
-        eventstartdate = new Date(ev.starts)
-        eventenddate = new Date(ev.ends)
+      if fuzzywhentolook == 'today'
+        #not really needed
+        whentolook = new Date()
+      else if fuzzywhentolook == 'tomorrow'
+        whentolook = whentolook.setDate(whentolook.getDate() + 1);
+      else if fuzzywhentolook == 'yesterday'
+        whentolook = whentolook.setDate(whentolook.getDate() - 1);
+      else if fuzzywhentolook == 'next week'
         now = new Date()
-        if eventstartdate < now and eventenddate > now
-          verbiage.push "\t\t#{ev.title} from #{new Date(ev.starts).toDateString()}, returning on #{new Date(ev.ends).toDateString()}"
-    if verbiage
-      msg.send "Holidays today: \n"+verbiage.join("\n")
-    else
-      msg.send "No holidays found for today"
+        whentolook = now.getNextWeekDay(1)
+        now = new Date()
+        whentolookend = now.getNextWeekDay(5)
+      else if fuzzywhentolook.substring(0, 5) == "next "
+        wantedday = fuzzywhentolook.replace /next /, ""
+        wanteddaynum = daysofweek.indexOf(wantedday.toLowerCase());
+        now = new Date()
+        whentolook = now.getNextWeekDay(wanteddaynum)
+      else if fuzzywhentolook.toLowerCase() in daysofweek
+        wanteddaynum = daysofweek.indexOf(fuzzywhentolook.toLowerCase());
+        now = new Date()
+        whentolook = now.getNextWeekDay(wanteddaynum,0)
+      else
+        msg.send "No idea when #{fuzzywhentolook} is. Sorry!"
+        return
+
+    if not whentolookend?
+      console.log "Setting end date same as start date"
+      whentolookend = whentolook
+    console.log "Looking for events from #{new Date(whentolook).toDateString()} to #{new Date(whentolookend).toDateString()}" 
+
+    ical = require('ical')
+    verbiage = []
+    ical.fromURL process.env.HUBOT_HOLIDAYCALENDAR_ICAL_URL, {}, (err, data) ->
+      for k, v of data
+        if data.hasOwnProperty(k)
+          eventlist = data[k]
+          for cal of data
+            for _, event of data[cal]
+              if event.type == 'VEVENT'
+                eventstartdate = new Date(event.start)
+                eventenddate = new Date(event.end)
+
+                if (eventstartdate < whentolook and eventenddate > whentolookend) or (eventstartdate > whentolook and eventenddate < whentolookend)
+                  verbiage.push "\t\t#{event.summary} from #{new Date(event.start).toDateString()}, returning on #{new Date(event.end).toDateString()}"
+
+      if verbiage.length > 0
+        msg.send "Holidays #{fuzzywhentolook} (#{new Date(whentolook).toDateString()} to #{new Date(whentolookend).toDateString()})\n"+verbiage.join("\n")
+      else
+        msg.send "No holidays found for #{fuzzywhentolook} (#{new Date(whentolook).toDateString()} to #{new Date(whentolookend).toDateString()})"
+
+
+# This is what an event looks like... 
+# 'c6381ae2-42b1-42ac-aeb1-0271f8197665': 
+#  { type: 'VEVENT',
+#    params: [],
+#    description: 'Created By : someone',
+#    end: { 2017-06-09T23:00:00.000Z tz: undefined },
+#    dtstamp: '20170724T141449Z',
+#    start: { 2017-06-08T23:00:00.000Z tz: undefined },
+#    sequence: '0',
+#    summary: 'bah - Holiday',
+#    uid: 'c6381ae2-42b1-42ac-aeb1-0271f8197665' },
