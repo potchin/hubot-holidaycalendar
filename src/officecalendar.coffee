@@ -38,6 +38,16 @@ module.exports = (robot) ->
         whentolook = whentolook.setDate(whentolook.getDate() + 1);
       else if fuzzywhentolook == 'yesterday'
         whentolook = whentolook.setDate(whentolook.getDate() - 1);
+      else if fuzzywhentolook == 'this week'
+        now = new Date()
+        whentolook = now.getNextWeekDay(1, w=-1)
+        now = new Date()
+        whentolookend = now.getNextWeekDay(5, w=0)
+      else if fuzzywhentolook == 'last week'
+        now = new Date()
+        whentolook = now.getNextWeekDay(1, w=-2)
+        now = new Date()
+        whentolookend = now.getNextWeekDay(5, w=-1)
       else if fuzzywhentolook == 'next week'
         now = new Date()
         whentolook = now.getNextWeekDay(1)
